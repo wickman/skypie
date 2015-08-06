@@ -12,8 +12,13 @@ setup(
     'Operating System :: OS Independent',
     'Programming Language :: Python',
   ],
-  packages = ['skypie'],
+  packages = ['skypie', 'skypie.bin'],
   install_requires = [
     'ansicolors',
   ],
+  entry_points = {
+    'console_scripts': [
+      'skypie = skypie.bin.skypie:main',
+    ]
+  }
 )

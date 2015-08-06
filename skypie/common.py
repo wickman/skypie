@@ -1,3 +1,6 @@
+from collections import namedtuple
+
+
 class Meterable(object):
   def iterate_values(self):
     pass
@@ -31,7 +34,7 @@ class Airplane(object):
     - Necessary upgrades
     - Engine (overhaul cost, TBO)
     - Depreciation model
-    
+
   """
 
   def __init__(

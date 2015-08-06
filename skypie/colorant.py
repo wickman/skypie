@@ -7,7 +7,7 @@ def breakeven(watermark):
       return green
     elif 0 < amount < watermark:
       return blue
-    else: 
+    else:
       return red
 
   return colorant

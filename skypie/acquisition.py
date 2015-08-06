@@ -7,7 +7,7 @@ __all__ = ('AllCash', 'Mortgage')
 class AllCashMeterable(Meterable):
   def __init__(self, price):
     self.price = price
-  
+
   def iterate_values(self):
     yield (self.price, 0)
     while True:
@@ -40,7 +40,7 @@ class MortgageMeterable(Meterable):
 
   def __init__(self, price, down_payment, term, rate):
     self.price, self.down_payment, self.rate, self.term = price, down_payment, rate, term
-  
+
   def iterate_values(self):
     down_payment = self.down_payment * self.price
     balance = self.price - down_payment
@@ -50,7 +50,7 @@ class MortgageMeterable(Meterable):
       yield (principal, interest)
     while True:
       yield (0, 0)
-  
+
 
 class Mortgage(Acquisition):
   def __init__(self, down_payment, term, rate):

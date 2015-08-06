@@ -1,8 +1,10 @@
-from color import white
+from __future__ import print_function
+
+from colors import white
 
 
 DEFAULT_M_RANGE = [m + 12 for m in range(0, 120, 12)]
-DEFUALT_H_RANGE = [h + 100 for h in range(0, 2000, 100)]
+DEFAULT_H_RANGE = [h + 100 for h in range(0, 2000, 100)]
 
 
 def table(plane, acquisition, model, m_range=None, h_range=None, colorant=None):
@@ -22,9 +24,9 @@ def table(plane, acquisition, model, m_range=None, h_range=None, colorant=None):
 
       srate = '%-.2f' % rate
       srate = '%10s ' % srate
-      
+
       color = colorant(rate) if colorant is not None else white
-      
+
       print(color(srate), end='')
 
     print('')
