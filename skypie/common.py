@@ -19,7 +19,6 @@ class Depreciation(Meterable):
 
 Engine = namedtuple('Engine', ('overhaul', 'tbo'))
 Performance = namedtuple('Performance', ('ktas', 'gph'))
-Insurance = namedtuple('Insurance', ('vfr', 'ifr'))
 
 
 class Upgrade(object):
@@ -32,18 +31,6 @@ class Upgrade(object):
 
 
 class Airplane(object):
-  """
-  All attributes affecting cost (attribute of plane)
-    - KTAS
-    - GPH
-    - Price
-    - Insurance rate
-    - Cost of annual
-    - Necessary upgrades
-    - Engine (overhaul cost, TBO)
-    - Depreciation model
-  """
-
   REQUIRED_ATTRS = frozenset([
     'name',
     'price',
@@ -55,31 +42,8 @@ class Airplane(object):
     'depreciation',
   ])
 
-  """
-  def __init__(
-      self,
-      name,
-      price,          # int
-      performance,    # (ktas, gph) tuple
-      insurance,      # (vfr, ifr) tuple
-      annual,         # price
-      upgrades,       # [ (price, depreciation model), ... ]
-      engine,         # (overhaul cost, tbo)
-      depreciation):  # depreciation model
-  """
-
   def __init__(self, **kw):
     self.__dict__.update(kw)
-    """
-    self.name = name
-    self.price = price
-    self.performance = performance
-    self.insurance = insurance
-    self.annual = annual
-    self.upgrades = upgrades
-    self.engine = engine
-    self.depreciation = depreciation
-    """
     self.__check()
 
   def __check(self):

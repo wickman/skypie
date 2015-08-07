@@ -96,7 +96,7 @@ def simple(
 
   # TODO(wickman) Add a location profile e.g. KSQL/KHWD
   fixed_iterator = FixedCosts(
-      plane.insurance.ifr, # insurance
+      plane.insurance,     # insurance
       3500,                # hangar
       1122 + 199,          # g1000 + foreflight subscriptions
       PROPERTY_TAX * plane.price,  # property tax
