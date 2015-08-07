@@ -18,6 +18,22 @@ class FixedCosts(Meterable):
       yield self.yearly_cost / 12.0
 
 
+# personal_rate = percentage of time used by owner vs school
+class UsageModel(object):
+  def __init__(
+      self,
+      personal_rate=1.0,  # percentage use by owner (1.0 = 100% of hours are owner hours)
+                          # note, any percentage < 1.0 means that the airplane must be
+                          # operated part 91, which means that it must get 100 hour inspections
+                          # in addition to annuals
+      hobbs_ratio=1.2,    # hobbs hour : tach hour ratio
+      revenue=0):         # hourly hobbs revenue
+
+    self.personal_rate = personal_rate
+    self.hobbs_ratio = hobbs_ratio
+    self.revenue = revenue
+
+
 class HourlyCosts(Meterable):
   GAS_PRICE_100LL = 5.50
 
@@ -62,6 +78,7 @@ class DepreciationAggregator(object):
 
 
 USE_TAX = 0.0825
+PROPERTY_TAX = 0.012
 
 
 def simple(
@@ -69,23 +86,33 @@ def simple(
     acquisition,
     flight_hours,
     ownership_months,
+    usage=UsageModel(),  # default usage model = 100% personal usage
     sell=True,
     debug=False):
 
+  part91 = usage.personal_rate < 1.0
+
   acquisition_iterator = acquisition.get(plane.price).iterate_values()
+
+  # TODO(wickman) Add a location profile e.g. KSQL/KHWD
   fixed_iterator = FixedCosts(
       plane.insurance.ifr, # insurance
       3500,                # hangar
       1122 + 199,          # g1000 + foreflight subscriptions
-      .012 * plane.price,  # property tax
+      PROPERTY_TAX * plane.price,  # property tax
       plane.annual,        # annual inspection
   ).iterate_values()
+
   hourly_iterator = HourlyCosts(
       plane.performance,
       plane.engine,
       plane.annual,
+      part91=part91
   ).iterate_values()
-  depreciations = DepreciationAggregator([(plane.price, plane.depreciation)] + plane.upgrades)
+
+  depreciations = [(plane.price, plane.depreciation)]
+  depreciations.extend((upgrade.price, upgrade.depreciation) for upgrade in plane.upgrades)
+  depreciations = DepreciationAggregator(depreciations)
 
   costs = plane.price * USE_TAX
   balance = plane.price
@@ -112,6 +139,11 @@ def simple(
   for _ in range(flight_hours):
     costs += next(hourly_iterator)
 
+  revenue = flight_hours * (1 - usage.personal_rate) * usage.revenue * usage.hobbs_ratio
+
+  if debug:
+    print('Revenue generated: %s' % revenue)
+
   price_at_sale = depreciations.price()
 
   if debug:
@@ -121,77 +153,13 @@ def simple(
     print('Gas, tax, overhauls, interest: %s' % costs)
 
   # return the total amount spent
-  spent = plane.price
+  spent = plane.price + sum(upgrade.price for upgrade in plane.upgrades)
   if sell:
     spent -= price_at_sale
+  spent -= revenue
   spent += costs
 
   if debug:
     print('Total spent: %s' % spent)
 
   return spent
-
-
-def part91_cost(plane, acquisition, flight_hours, ownership_months, percentage_part91, part91_rate):
-  acquisition_iterator = acquisition.get(plane.price).iterate_values()
-  fixed_iterator = FixedCosts(
-      plane.insurance.ifr, # insurance
-      3500,                # hangar
-      1122 + 199,          # g1000 + foreflight subscriptions
-      .012 * plane.price,  # property tax
-      plane.annual,        # annual inspection
-  ).iterate_values()
-  hourly_iterator = HourlyCosts(
-      plane.performance,
-      plane.engine,
-      plane.annual,
-      part91=True,
-  ).iterate_values()
-  depreciations = DepreciationAggregator([(plane.price, plane.depreciation)] + plane.upgrades)
-
-  costs = plane.price * USE_TAX
-  balance = plane.price
-
-  for k in range(ownership_months):
-    principal, interest = next(acquisition_iterator)
-    costs += interest
-    balance -= principal
-    fixed_costs = next(fixed_iterator)
-    costs += fixed_costs
-    depreciations.tick()
-
-  income = percentage_part91 * flight_hours * part91_rate
-
-  for _ in range(flight_hours):
-    costs += next(hourly_iterator)
-
-  price_at_sale = depreciations.price()
-
-  # return the total amount spent
-  spent = plane.price - price_at_sale
-  spent += costs
-  spent -= income
-
-  return spent
-
-
-
-def debug(plane, acquisition, hours, months, part91=False):
-  spent = fly_and_sell(plane, acquisition, hours, months, part91=part91, debug=True)
-  print('Total hourly rate: %.2f/hr' % (spent / hours if hours > 0 else 0))
-  print('\n')
-
-
-"""
-table(DA40, Mortgage(.15, 120, .0625), breakeven=285)
-table(DA40, Mortgage(.25,  60, .0625), breakeven=285)
-table(DA40,                   AllCash, breakeven=285)
-table(DA40, Mortgage(.15, 120, .0625), breakeven=285, part91=(0.25, 275))
-table(DA40, Mortgage(.15, 120, .0625), breakeven=285, part91=(0.5, 275))
-table(DA40, Mortgage(.15, 120, .0625), breakeven=285, part91=(0.75, 275))
-
-
-#table(DA40, AllCash, breakeven=285)
-#debug(DA40, Mortgage(.15, 120, .0625), 2000, 144)
-#debug(DA40, AllCash, 500, 12)
-"""

@@ -36,4 +36,28 @@ class ExponentialDepreciation(Depreciation):
 
 
 class LinearDepreciation(Depreciation):
-  pass
+  def __init__(self, months):
+    self.months = months
+
+  def iterate_values(self):
+    for k in range(self.months, 0, -1):
+      yield 1.0 * k / self.months
+    while True:
+      yield 0
+
+  def __str__(self):
+    return 'Fixed %d month useful life.' % self.months
+
+
+class DepreciationCombinator(Depreciation):
+  def __init__(self, depreciation_models):
+    self.dms = [model for model in depreciation_models]
+
+  def iterate_values(self):
+    dm_iters = [model.iterate_values() for model in self.dms]
+
+    while True:
+      yield reduce(float.__mul__, [next(dm_iter) for dm_iter in dm_iters])
+
+  def __str__(self):
+    return 'Blended depreciation: %s' % (' + '.join(map(str, (dm for dm in self.dms))))

@@ -8,6 +8,15 @@ DEFAULT_H_RANGE = [h + 100 for h in range(0, 2000, 100)]
 
 
 def table(plane, acquisition, model, m_range=None, h_range=None, colorant=None):
+  print('Plane:        %s' % plane.name)
+  print('Acquisition:  %s' % acquisition)
+  print('Depreciation: %s' % plane.depreciation)
+  print('Model:        %s' % model.__name__)
+  if plane.upgrades:
+    print('Upgrades:')
+    for upgrade in plane.upgrades:
+      print('  %s: %s, %s' % (upgrade.name, upgrade.price, upgrade.depreciation))
+
   m_range = m_range or DEFAULT_M_RANGE
   h_range = h_range or DEFAULT_H_RANGE
 
