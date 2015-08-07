@@ -60,9 +60,8 @@ all of these parameters can be overridden, for example:
         12,120,12                  # show ownership of 1-10 years in 1 year increments
 ..
 
-the output being:
+the output being::
 
-``
     Sell or keep: sell
     Plane:        DA40
     Acquisition:  all cash
@@ -79,7 +78,7 @@ the output being:
       400     -25.45     -45.68     -55.19     -61.66     -66.67 
       450     -38.17     -56.14     -64.60     -70.35     -74.81 
       500     -48.34     -64.52     -72.12     -77.30     -81.31 
-``
+
 
 this means that for every 100 hours the plane is flown, you fly 25 hours for personal use and 75 is
 leased back as part of part 91 operations (100-hour inspections are factored into the per-hour
