@@ -56,8 +56,9 @@ all of these parameters can be overridden, for example:
         --usage-hobbs-ratio=1.3 \  # assume 1.3:1 hobbs:tachometer time
         --sell \                   # assume the plane is sold at the end of the term for the depreciated value
         table DA40 \               # inherit all the rest of the DA40 defaults
-        50,500,50                  # show 50-500 in 50 hour/yr increments
-        12,120,12                  # show ownership of 1-10 years in 1 year increments
+        --output=outlay \          # tabulate by total outlay instead of per-hour cost
+        50,500,50 \                # show 50-500 in 50 hour/yr increments
+        24,120,24                  # show ownership of 1-10 years in 1 year increments
 ..
 
 the output being::
@@ -66,25 +67,34 @@ the output being::
     Plane:        DA40
     Acquisition:  all cash
     Depreciation: 10.00% per 12 months
-
                   24         48         72         96        120 
-       50     775.50     613.70     537.63     485.86     445.73 
-      100     317.81     236.91     198.88     172.99     152.93 
-      150     165.25     111.32      85.96      68.70      55.33 
-      200      88.97      48.52      29.50      16.56       6.53 
-      250      43.20      10.84      -4.37     -14.73     -22.75 
-      300      12.69     -14.28     -26.96     -35.59     -42.27 
-      350      -9.11     -32.22     -43.09     -50.48     -56.22 
-      400     -25.45     -45.68     -55.19     -61.66     -66.67 
-      450     -38.17     -56.14     -64.60     -70.35     -74.81 
-      500     -48.34     -64.52     -72.12     -77.30     -81.31 
+       50   77549.69  122740.38  161287.76  194344.78  222864.32 
+      100   63562.19   94765.38  119325.26  138394.78  152926.82 
+      150   49574.69   66790.38   77362.76   82444.78   82989.32 
+      200   35587.19   38815.38   35400.26   26494.78   13051.82 
+      250   21599.69   10840.38   -6562.24  -29455.22  -56885.68 
+      300    7612.19  -17134.62  -48524.74  -85405.22 -126823.18 
+      350   -6375.31  -45109.62  -90487.24 -141355.22 -196760.68 
+      400  -20362.81  -73084.62 -132449.74 -197305.22 -266698.18 
+      450  -34350.31 -101059.62 -174412.24 -253255.22 -336635.68 
+      500  -48337.81 -129034.62 -216374.74 -309205.22 -406573.18 
 
 
-this means that for every 100 hours the plane is flown, you fly 25 hours for personal use and 75 is
-leased back as part of part 91 operations (100-hour inspections are factored into the per-hour
-price and are based off annual inspection prices.)  while the plane is flown 75 hours (tachometer),
-it is billed 97.5 hours (hobbs) owing to the 1.3 hobbs-to-tachometer ratio.  this is common when
-flown for a flight school.  the plane is then sold at the end of the period for the depreciated
-price.
+this means that for every 100 hours the plane is flown, you fly 25 hours for
+personal use and 75 is leased back as part of part 91 operations (100-hour
+inspections are factored into the per-hour price and are based off annual
+inspection prices.) while the plane is flown 75 hours (tachometer), it is
+billed 97.5 hours (hobbs) owing to the 1.3 hobbs-to-tachometer ratio.  this
+is common when flown for a flight school.  the plane is then sold at the end
+of the period for the depreciated price.
 
-the cost of G1000 subscriptions, hangar, insurance, gas, overhaul, etc are included.
+the cost of G1000 subscriptions, hangar, insurance, gas, overhaul, use tax,
+property tax (california only, todo: make configurable), etc are included.
+
+taking for example the 250 / 72 column: if the plane is flown 250 hours per
+year (63 by you and 187 by a club/fbo) and sold after 6 years of ownership,
+a profit of roughly $6,500 is turned.  this is of course assuming that the
+plane has depreciated from $269,000 to $151,800 in that period of time.
+
+other factors such as inflation or the pre-tax/post-tax cost basis of money
+is *not* reflected.  TODO :-)
