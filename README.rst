@@ -96,5 +96,8 @@ year (63 by you and 187 by a club/fbo) and sold after 6 years of ownership,
 a profit of roughly $6,500 is turned.  this is of course assuming that the
 plane has depreciated from $269,000 to $151,800 in that period of time.
 
-other factors such as inflation or the pre-tax/post-tax cost basis of money
-is *not* reflected.  TODO :-)
+income tax rate is *not* yet reflected, so the simulation above is likely
+unrealistic, e.g. if you are leasing back the plane, if your per hour revenue
+is $235/hr, realistic post-tax returns are a smaller fraction of that.  reducing the
+revenue number to *post-tax* income by changing ``--usage-revenue=150``
+when assuming a billing rate of $235/hr will provide more realistic numbers.
