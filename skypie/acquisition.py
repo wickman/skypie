@@ -30,7 +30,6 @@ class MortgageMeterable(Meterable):
 
   @classmethod
   def iterate_payments(cls, rate, term, balance):
-    interest = 0
     payment = cls.monthly_payment(rate, term, balance)
     for month in range(term):
       interest_portion = (rate / 12) * balance

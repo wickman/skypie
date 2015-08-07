@@ -1,24 +1,26 @@
 from __future__ import print_function
-import math
-from collections import namedtuple
 
-from colors import green, white, red, blue
-
-from .acquisition import AllCash, Mortgage
-from .common import Meterable, Airplane
-from .depreciation import FixedDepreciation, ExponentialDepreciation, LinearDepreciation
+from .common import Meterable
 
 
 class FixedCosts(Meterable):
-  def __init__(self, insurance, hangar, subscriptions, property_tax, annual):
-    self.yearly_cost = insurance + hangar + subscriptions + property_tax + annual
+  def __init__(self, *args):
+    self.yearly_cost = sum(args)
 
   def iterate_values(self):
     while True:
       yield self.yearly_cost / 12.0
 
 
-# personal_rate = percentage of time used by owner vs school
+class FixedCostAggregator(Meterable):
+  def __init__(self, *fixed_costs):
+    self.costs = sum(cost.yearly_cost for cost in fixed_costs)
+
+  def iterate_values(self):
+    while True:
+      yield self.costs / 12.0
+
+
 class UsageModel(object):
   def __init__(
       self,
@@ -87,6 +89,7 @@ def simple(
     flight_hours,
     ownership_months,
     usage=UsageModel(),  # default usage model = 100% personal usage
+    additional_costs=0,  # additional yearly costs
     sell=True,
     debug=False):
 
@@ -94,13 +97,13 @@ def simple(
 
   acquisition_iterator = acquisition.get(plane.price).iterate_values()
 
-  # TODO(wickman) Add a location profile e.g. KSQL/KHWD
   fixed_iterator = FixedCosts(
-      plane.insurance,     # insurance
-      3500,                # hangar
-      1122 + 199,          # g1000 + foreflight subscriptions
-      PROPERTY_TAX * plane.price,  # property tax
-      plane.annual,        # annual inspection
+      # assume that the plane is flown enough to combine 100-hr/annual inspections
+      plane.annual if not part91 else 0,
+      plane.insurance,
+      PROPERTY_TAX * plane.price,
+      plane.yearly_costs,
+      additional_costs,
   ).iterate_values()
 
   hourly_iterator = HourlyCosts(

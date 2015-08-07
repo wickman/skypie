@@ -1,4 +1,4 @@
-from colors import red, green, blue
+from colors import blue, green, red
 
 
 def breakeven(watermark):

@@ -32,23 +32,28 @@ class Upgrade(object):
 
 class Airplane(object):
   REQUIRED_ATTRS = frozenset([
-    'name',
-    'price',
-    'performance',
-    'insurance',
-    'annual',
-    'upgrades',
-    'engine',
-    'depreciation',
+    'name',           # name of the plane
+    'price',          # price of the plane
+    'performance',    # performance of the plane (ktas, gph) tuple
+    'insurance',      # insurance cost of the plane
+    'annual',         # cost of annual
+    'upgrades',       # array of Upgrade objects
+    'engine',         # engine (overhaul price, tbo) tuple
+    'depreciation',   # depreciation model
   ])
 
+  DEFAULT_ATTRS = dict(
+    yearly_costs=0    # additional yearly costs, e.g. g1000 subscription for equipped planes
+  )
+
   def __init__(self, **kw):
+    self.__dict__.update(self.DEFAULT_ATTRS)
     self.__dict__.update(kw)
     self.__check()
 
   def __check(self):
     if not all(attr in self.__dict__ for attr in self.REQUIRED_ATTRS):
-      raise ValueError('Missing one of %s' % ' '.join(REQUIRED_ATTRS))
+      raise ValueError('Missing one of %s' % ' '.join(self.REQUIRED_ATTRS))
 
   def __call__(self, **kwargs):
     kw = self.__dict__.copy()

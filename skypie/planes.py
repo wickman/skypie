@@ -1,28 +1,31 @@
 from .common import (
     Airplane,
-    Performance,
     Engine,
+    Performance,
 )
 from .depreciation import ExponentialDepreciation
 
 
-DA40 = Airplane(
+# G1000 Chart subscription price
+G1000_SUBSCRIPTION = 1122
+
+
+Diamond_DA40 = Airplane(
     name='DA40',
     price=239000,
     performance=Performance(ktas=135, gph=10),
-    # insurance=Insurance(vfr=2200, ifr=1300),
-    insurance=1300,
+    insurance=1500,
     annual=3500,
     upgrades=[],
     engine=Engine(overhaul=18000, tbo=2000),
     depreciation=ExponentialDepreciation(0.10, 12),
+    yearly_costs=G1000_SUBSCRIPTION,
 )
 
-T210 = Airplane(
+Cessna_T210 = Airplane(
     name='T210',
     price=79000,
     performance=Performance(ktas=170, gph=18),
-    # insurance=Insurance(vfr=8000, ifr=5000),
     insurance=5000,
     annual=9000,
     upgrades=[],
@@ -30,8 +33,19 @@ T210 = Airplane(
     depreciation=ExponentialDepreciation(0.03, 12),
 )
 
-
-PLANES = dict(
-    DA40=DA40,
-    T210=T210,
+Cessna_152 = Airplane(
+    name='152',
+    price=35000,
+    performance=Performance(ktas=107, gph=5.5),
+    insurance=800,
+    annual=1500,
+    upgrades=[],
+    engine=Engine(overhaul=13900, tbo=2400),
+    depreciation=ExponentialDepreciation(0.03, 12),
 )
+
+PLANES = dict({
+    'DA40': Diamond_DA40,
+    'T210': Cessna_T210,
+    '152': Cessna_152,
+})

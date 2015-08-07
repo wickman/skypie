@@ -1,16 +1,13 @@
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, print_function
 
 import argparse
-import functools
 import sys
 
 from skypie.acquisition import AllCash, Mortgage
 from skypie.colorant import breakeven
-from skypie.depreciation import LinearDepreciation
-from skypie.model import UsageModel, simple
+from skypie.model import simple, UsageModel
 from skypie.planes import PLANES
 from skypie.tabulator import table
-from skypie.upgrades import G500_GTN750
 
 
 def setup_argparser():
@@ -24,6 +21,20 @@ def setup_argparser():
   setup_argparser_table_command(subcommand_parser)
 
   return parser
+
+
+def update_plane(plane, args):
+  if args.price is not None:
+    plane = plane(price=args.price)
+
+  if args.annual is not None:
+    plane = plane(annual=args.annual)
+
+  if args.insurance is not None:
+    plane = plane(insurance=args.insurance)
+
+  if args.housing:
+    plane = plane(yearly_costs=plane.yearly_costs + args.housing)
 
 
 def table_command(args):
@@ -51,11 +62,11 @@ def table_command(args):
     else:
       raise ValueError('Unknown outlay type %s' % args.output)
 
-  if args.price is not None:
-    plane = plane(price=args.price)
+  plane = update_plane(plane, args)
 
-  if args.annual is not None:
-    plane = plane(annual=args.annual)
+  colorant = None
+  if args.breakeven:
+    colorant = breakeven(args.breakeven)
 
   table(
       plane,
@@ -63,7 +74,7 @@ def table_command(args):
       model,
       h_range=h_range,
       m_range=m_range,
-      colorant=breakeven(285),
+      colorant=colorant,
       yearly=args.range_type == 'yearly',
   )
   print('\n')
@@ -83,7 +94,8 @@ def setup_argparser_table_command(parser):
   table_parser.add_argument('--range-type', choices=['yearly', 'total'], default='yearly',
     help='If --range-type=yearly, interpret the hour value as hours per year. If '
          '--range-type=total, interpret the hour value as total hours.')
-  # parser.add_argument('--breakeven', ...)
+  table_parser.add_argument('--breakeven', type=float, default=None,
+    help='The cost breakeven point.  Colorizes the table based on this value if specified.')
 
 
 def setup_argparser_usagemodel(parser):
@@ -138,6 +150,7 @@ def parse_acquisition(args):
 
 
 def setup_argparser_depreciation(parser):
+  # TODO implement
   # --depreciation=fixed:percent
   # --depreciation=exponential:amount:rate
   # --depreciation=linear:months
@@ -162,13 +175,19 @@ class SaleAction(argparse.Action):
 
 
 def setup_argparser_plane_option_overrides(parser):
-  # --upgrade=name
+  # TODO: --upgrade=name
   group = parser.add_argument_group('plane options')
   group.add_argument('--keep', '--sell', dest='sell', action=SaleAction,
       help='Whether to keep or sell the plane following calculation; default is to keep.')
-  group.add_argument('--price', type=float, default=None, help='Override the price of the airplane.')
-  group.add_argument('--annual', type=float, default=None, help='Override the expected annual price.')
-  group.add_argument('--insurance', type=float, default=None, help='Override the insurance rate.')
+  group.add_argument('--price', type=float, default=None,
+      help='Override the price of the airplane.')
+  group.add_argument('--annual', type=float, default=None,
+      help='Override the expected annual price.')
+  group.add_argument('--insurance', type=float, default=None,
+      help='Override the insurance rate.')
+  group.add_argument('--housing', type=float, default=0,
+      help='Yearly housing price for the plane, e.g. tie-downs at KHWD will be '
+           'approximately 800/yr.')
 
 
 def die(error):
@@ -184,7 +203,7 @@ def parse_range(range_string):
 
   try:
     start, stop, extent = range_string.split(',', 3)
-    return range(int(start), int(stop), int(extent))
+    return range(int(start), int(stop) + int(extent), int(extent))
   except ValueError:
     die('Invalid number or range string: %s' % range_string)
 
