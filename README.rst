@@ -62,11 +62,12 @@ all of these parameters can be overridden, for example:
 
 the output being:
 
-.. code-block::
+``
     Sell or keep: sell
     Plane:        DA40
     Acquisition:  all cash
     Depreciation: 10.00% per 12 months
+
                   24         48         72         96        120 
        50     775.50     613.70     537.63     485.86     445.73 
       100     317.81     236.91     198.88     172.99     152.93 
@@ -78,7 +79,7 @@ the output being:
       400     -25.45     -45.68     -55.19     -61.66     -66.67 
       450     -38.17     -56.14     -64.60     -70.35     -74.81 
       500     -48.34     -64.52     -72.12     -77.30     -81.31 
-..
+``
 
 this means that for every 100 hours the plane is flown, you fly 25 hours for personal use and 75 is
 leased back as part of part 91 operations (100-hour inspections are factored into the per-hour
