@@ -7,7 +7,15 @@ DEFAULT_M_RANGE = [m + 12 for m in range(0, 120, 12)]
 DEFAULT_H_RANGE = [h + 100 for h in range(0, 2000, 100)]
 
 
-def table(plane, acquisition, model, m_range=None, h_range=None, colorant=None):
+def table(
+    plane,
+    acquisition,
+    model,
+    m_range=None,
+    h_range=None,
+    colorant=None,
+    yearly=False):
+
   print('Plane:        %s' % plane.name)
   print('Acquisition:  %s' % acquisition)
   print('Depreciation: %s' % plane.depreciation)
@@ -29,7 +37,13 @@ def table(plane, acquisition, model, m_range=None, h_range=None, colorant=None):
     print('%5d ' % hours, end='')
 
     for months in m_range:
-      rate = model(plane, acquisition, hours, months)
+      if yearly:
+        num_years = months / 12.0
+        num_hours = int(num_years * hours)
+      else:
+        num_hours = hours
+
+      rate = model(plane, acquisition, num_hours, months)
 
       srate = '%-.2f' % rate
       srate = '%10s ' % srate

@@ -15,24 +15,75 @@ from skypie.upgrades import G500_GTN750
 
 def setup_argparser():
   parser = argparse.ArgumentParser()
-
-  # args:
-  #    plane [h_value or h_range] [m_value or m_range]
-  #    da40 2000 0,180,24
-
-  parser.add_argument('plane', choices=PLANES)
-  parser.add_argument('h_range', help='Hours of flight, or range.')
-  parser.add_argument('m_range', help='Months of ownership, or range.')
-  parser.add_argument('--debug', action='store_true')
-  parser.add_argument('--output', choices=['hourly', 'outlay'], default='hourly')
-
-  # parser.add_argument('--breakeven', ...)
-
   setup_argparser_usagemodel(parser)
   setup_argparser_acquisition(parser)
   setup_argparser_depreciation(parser)
   setup_argparser_plane_option_overrides(parser)
+
+  subcommand_parser = parser.add_subparsers(help='subcommand help')
+  setup_argparser_table_command(subcommand_parser)
+
   return parser
+
+
+def table_command(args):
+  print('Sell or keep: %s' % ('sell' if args.sell else 'keep'))
+
+  plane = PLANES[args.plane]
+  h_range = parse_range(args.h_range)
+  m_range = parse_range(args.m_range)
+  acquisition = parse_acquisition(args)
+  usage_model = parse_usage_model(args)
+
+  def model(plane, acquisition, hours, months):
+    outlay = simple(
+        plane,
+        acquisition,
+        hours,
+        months,
+        usage=usage_model,
+        sell=args.sell)
+
+    if args.output == 'outlay':
+      return outlay
+    elif args.output == 'hourly':
+      return outlay / hours if hours > 0 else 0
+    else:
+      raise ValueError('Unknown outlay type %s' % args.output)
+
+  if args.price is not None:
+    plane = plane(price=args.price)
+
+  if args.annual is not None:
+    plane = plane(annual=args.annual)
+
+  table(
+      plane,
+      acquisition,
+      model,
+      h_range=h_range,
+      m_range=m_range,
+      colorant=breakeven(285),
+      yearly=args.range_type == 'yearly',
+  )
+  print('\n')
+
+
+def setup_argparser_table_command(parser):
+  # args:
+  #    plane [h_value or h_range] [m_value or m_range]
+  #    da40 2000 0,180,24
+  table_parser = parser.add_parser('table', help='Provide tabular representation of a model.')
+  table_parser.set_defaults(func=table_command)
+  table_parser.add_argument('plane', choices=PLANES)
+  table_parser.add_argument('h_range', help='Hours of flight, or range.')
+  table_parser.add_argument('m_range', help='Months of ownership, or range.')
+  table_parser.add_argument('--debug', action='store_true')
+  table_parser.add_argument('--output', choices=['hourly', 'outlay'], default='hourly')
+  table_parser.add_argument('--range-type', choices=['yearly', 'total'], default='yearly',
+    help='If --range-type=yearly, interpret the hour value as hours per year. If '
+         '--range-type=total, interpret the hour value as total hours.')
+  # parser.add_argument('--breakeven', ...)
 
 
 def setup_argparser_usagemodel(parser):
@@ -140,45 +191,5 @@ def parse_range(range_string):
 
 def main():
   parser = setup_argparser()
-
   args = parser.parse_args()
-
-  plane = PLANES[args.plane]
-  h_range = parse_range(args.h_range)
-  m_range = parse_range(args.m_range)
-  acquisition = parse_acquisition(args)
-  usage_model = parse_usage_model(args)
-
-  print('Sell or keep: %s' % ('sell' if args.sell else 'keep'))
-
-  def model(plane, acquisition, hours, months):
-    outlay = simple(
-        plane,
-        acquisition,
-        hours,
-        months,
-        usage=usage_model,
-        sell=args.sell)
-
-    if args.output == 'outlay':
-      return outlay
-    elif args.output == 'hourly':
-      return outlay / hours if hours > 0 else 0
-    else:
-      raise ValueError('Unknown outlay type %s' % args.output)
-
-  if args.price is not None:
-    plane = plane(price=args.price)
-
-  if args.annual is not None:
-    plane = plane(annual=args.annual)
-
-  table(
-      plane,
-      acquisition,
-      model,
-      h_range=h_range,
-      m_range=m_range,
-      colorant=breakeven(285),
-  )
-  print('\n')
+  sys.exit(args.func(args))
