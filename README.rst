@@ -63,19 +63,28 @@ all of these parameters can be overridden, for example:
 the output being:
 
 .. code-block::
-Sell or keep: sell
-Plane:        DA40
-Acquisition:  all cash
-Depreciation: 10.00% per 12 months
-              12         24         36         48         60         72         84         96        108        120 
-   50    1040.76     775.50     673.71     613.70     571.07     537.63     509.83     485.86     464.71     445.73 
-  100     450.44     317.81     266.92     236.91     215.60     198.88     184.98     172.99     162.42     152.93 
-  150     253.67     165.25     131.32     111.32      97.11      85.96      76.69      68.70      61.65      55.33 
-  200     155.28      88.97      63.52      48.52      37.86      29.50      22.55      16.56      11.27       6.53 
-  250      96.25      43.20      22.84      10.84       2.31      -4.37      -9.93     -14.73     -18.96     -22.75 
-  300      56.90      12.69      -4.28     -14.28     -21.38     -26.96     -31.59     -35.59     -39.11     -42.27 
-  350      28.79      -9.11     -23.65     -32.22     -38.31     -43.09     -47.06     -50.48     -53.51     -56.22 
-  400       7.70     -25.45     -38.18     -45.68     -51.01     -55.19     -58.66     -61.66     -64.30     -66.67 
-  450      -8.69     -38.17     -49.48     -56.14     -60.88     -64.60     -67.69     -70.35     -72.70     -74.81 
-  500     -21.81     -48.34     -58.52     -64.52     -68.78     -72.12     -74.90     -77.30     -79.42     -81.31 
+    Sell or keep: sell
+    Plane:        DA40
+    Acquisition:  all cash
+    Depreciation: 10.00% per 12 months
+                  24         48         72         96        120 
+       50     775.50     613.70     537.63     485.86     445.73 
+      100     317.81     236.91     198.88     172.99     152.93 
+      150     165.25     111.32      85.96      68.70      55.33 
+      200      88.97      48.52      29.50      16.56       6.53 
+      250      43.20      10.84      -4.37     -14.73     -22.75 
+      300      12.69     -14.28     -26.96     -35.59     -42.27 
+      350      -9.11     -32.22     -43.09     -50.48     -56.22 
+      400     -25.45     -45.68     -55.19     -61.66     -66.67 
+      450     -38.17     -56.14     -64.60     -70.35     -74.81 
+      500     -48.34     -64.52     -72.12     -77.30     -81.31 
 ..
+
+this means that for every 100 hours the plane is flown, you fly 25 hours for personal use and 75 is
+leased back as part of part 91 operations (100-hour inspections are factored into the per-hour
+price and are based off annual inspection prices.)  while the plane is flown 75 hours (tachometer),
+it is billed 97.5 hours (hobbs) owing to the 1.3 hobbs-to-tachometer ratio.  this is common when
+flown for a flight school.  the plane is then sold at the end of the period for the depreciated
+price.
+
+the cost of G1000 subscriptions, hangar, insurance, gas, overhaul, etc are reflected.
