@@ -35,11 +35,11 @@ def update_plane(plane, args):
 
   if args.housing:
     plane = plane(yearly_costs=plane.yearly_costs + args.housing)
+  
+  return plane
 
 
 def table_command(args):
-  print('Sell or keep: %s' % ('sell' if args.sell else 'keep'))
-
   plane = PLANES[args.plane]
   h_range = parse_range(args.h_range)
   m_range = parse_range(args.m_range)
@@ -68,6 +68,7 @@ def table_command(args):
   if args.breakeven:
     colorant = breakeven(args.breakeven)
 
+  print('Sell or keep: %s' % ('sell' if args.sell else 'keep'))
   table(
       plane,
       acquisition,
