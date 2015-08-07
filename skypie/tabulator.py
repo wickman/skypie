@@ -19,7 +19,6 @@ def table(
   print('Plane:        %s' % plane.name)
   print('Acquisition:  %s' % acquisition)
   print('Depreciation: %s' % plane.depreciation)
-  print('Model:        %s' % model.__name__)
   if plane.upgrades:
     print('Upgrades:')
     for upgrade in plane.upgrades:
