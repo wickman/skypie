@@ -12,13 +12,28 @@ class Acquisition(object):
     pass
 
 
-class Depreciation(Meterable):
+class DepreciationModel(Meterable):
   # yields %ages that represent percent of original price
-  pass
+  def at(self, month):
+    _, depreciation = list(zip(range(month), self.iterate_values()))[-1]
+    return depreciation
 
 
-Engine = namedtuple('Engine', ('overhaul', 'tbo'))
 Performance = namedtuple('Performance', ('ktas', 'gph'))
+
+
+class Engine(object):
+  def __init__(self, overhaul, tbo, fuel='gas_100ll', smoh=0):
+    self.overhaul, self.tbo = overhaul, tbo
+    self.fuel = fuel
+    self.smoh = smoh
+
+
+class Prop(object):
+  def __init__(self, overhaul, tbo, spoh=0):
+    self.overhaul = overhaul
+    self.tbo = tbo
+    self.spoh = spoh
 
 
 class Upgrade(object):
@@ -37,13 +52,15 @@ class Airplane(object):
     'performance',    # performance of the plane (ktas, gph) tuple
     'insurance',      # insurance cost of the plane
     'annual',         # cost of annual
-    'upgrades',       # array of Upgrade objects
-    'engine',         # engine (overhaul price, tbo) tuple
+    'engine',         # engine (overhaul price, tbo, fuel, smoh) tuple
+    'prop',           # prop (overhaul price, tbo, spoh) tuple
     'depreciation',   # depreciation model
   ])
 
   DEFAULT_ATTRS = dict(
-    yearly_costs=0    # additional yearly costs, e.g. g1000 subscription for equipped planes
+    yearly_costs=0,   # additional yearly costs, e.g. g1000 subscription for equipped planes
+    upgrades=[],      # array of Upgrade objects
+    ttaf=0,
   )
 
   def __init__(self, **kw):

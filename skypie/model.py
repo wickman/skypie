@@ -1,24 +1,19 @@
 from __future__ import print_function
 
+from collections import defaultdict
+import math
+
+from .balance import (
+    Asset,
+    Balance,
+    CapEx,
+    Depreciation,
+    Hobby,
+    Income,
+    OpEx,
+)
 from .common import Meterable
-
-
-class FixedCosts(Meterable):
-  def __init__(self, *args):
-    self.yearly_cost = sum(args)
-
-  def iterate_values(self):
-    while True:
-      yield self.yearly_cost / 12.0
-
-
-class FixedCostAggregator(Meterable):
-  def __init__(self, *fixed_costs):
-    self.costs = sum(cost.yearly_cost for cost in fixed_costs)
-
-  def iterate_values(self):
-    while True:
-      yield self.costs / 12.0
+from .constants import CONSTANTS
 
 
 class UsageModel(object):
@@ -29,140 +24,136 @@ class UsageModel(object):
                           # operated part 91, which means that it must get 100 hour inspections
                           # in addition to annuals
       hobbs_ratio=1.2,    # hobbs hour : tach hour ratio
+      salary=0,           # hourly salary as cost of revenue
       revenue=0):         # hourly hobbs revenue
 
     self.personal_rate = personal_rate
     self.hobbs_ratio = hobbs_ratio
+    self.salary = salary
     self.revenue = revenue
-
-
-class HourlyCosts(Meterable):
-  GAS_PRICE_100LL = 5.50
-
-  def __init__(
-      self,
-      performance,
-      engine,
-      annual,
-      part91=False):
-
-    self.performance, self.engine, self.annual, self.part91 = performance, engine, annual, part91
-
-  def iterate_values(self):
-    hourly_tbo_reserve = 1.0 * self.engine.overhaul / self.engine.tbo
-    hourly_gas = self.performance.gph * self.GAS_PRICE_100LL
-
-    total = hourly_tbo_reserve + hourly_gas
-
-    if self.part91:
-      total += self.annual / 100.0
-
-    # TODO: Support both reserve-style and step-style accounting.
-    # TODO: Support oil costs, or just add fixed number like $3/hr
-    while True:
-      yield total
-
-
-class DepreciationAggregator(object):
-  def __init__(self, price_and_depreciations):
-    self.prices = [price for price, _ in price_and_depreciations]
-    self.depreciation_iters = [
-        depreciation.iterate_values() for _, depreciation in price_and_depreciations]
-
-  def price(self):
-    return sum(
-      price * next(iterator)
-      for price, iterator in zip(self.prices, self.depreciation_iters))
-
-  def tick(self):
-    for iterator in self.depreciation_iters:
-      next(iterator)
-
-
-USE_TAX = 0.0825
-PROPERTY_TAX = 0.012
 
 
 def simple(
     plane,
     acquisition,
     flight_hours,
-    ownership_months,
+    ownership_years,
     usage=UsageModel(),  # default usage model = 100% personal usage
-    additional_costs=0,  # additional yearly costs
-    sell=True,
-    debug=False):
+    constants=CONSTANTS):
 
-  part91 = usage.personal_rate < 1.0
+  assert ownership_years > 0
+  ownership_months = ownership_years * 12
 
   acquisition_iterator = acquisition.get(plane.price).iterate_values()
 
-  fixed_iterator = FixedCosts(
-      # assume that the plane is flown enough to combine 100-hr/annual inspections
-      plane.annual if not part91 else 0,
-      plane.insurance,
-      PROPERTY_TAX * plane.price,
-      plane.yearly_costs,
-      additional_costs,
-  ).iterate_values()
+  yearly_costs = (
+      plane.insurance +
+      plane.price * constants['property_tax'] +
+      plane.yearly_costs
+  )
 
-  hourly_iterator = HourlyCosts(
-      plane.performance,
-      plane.engine,
-      plane.annual,
-      part91=part91
-  ).iterate_values()
+  hourly_costs = (
+      plane.performance.gph * constants[plane.engine.fuel]
+      # todo: oil costs
+  )
 
-  depreciations = [(plane.price, plane.depreciation)]
-  depreciations.extend((upgrade.price, upgrade.depreciation) for upgrade in plane.upgrades)
-  depreciations = DepreciationAggregator(depreciations)
+  # initialize a balance sheet
+  balance = Balance()
 
-  costs = plane.price * USE_TAX
-  balance = plane.price
+  depreciations = defaultdict(list)
 
-  if debug:
-    print('Starting costs: %s' % costs)
-    print('Starting balance: %s' % balance)
+  # we have two models:
+  #   - the salvage price (presumably some exponential decay.)
+  #   - the depreciation model (presumably straight-line.)
+  #
+  # Asset(price, salvage value, years)
+  balance += Asset(
+      plane.price,
+      plane.price * plane.depreciation.at(ownership_months),
+      ownership_months)
 
-  for k in range(ownership_months):
+  depreciation_value = plane.price - plane.price * plane.depreciation.at(ownership_months)
+  for year in range(ownership_years):
+    depreciations[year].append(1.0 * depreciation_value / ownership_years)
+
+  for upgrade in plane.upgrades:
+    balance += CapEx(upgrade.price)
+    balance += Asset(
+        upgrade.price,
+        upgrade.depreciation.at(ownership_months),
+        ownership_months)
+    depreciation_value = upgrade.price - upgrade.price * upgrade.depreciation.at(ownership_months)
+    for year in range(ownership_years):
+      depreciations[year].append(1.0 * depreciation_value / ownership_years)
+
+  balance += OpEx(plane.price * constants['use_tax'])
+
+  engine_hours = plane.engine.smoh
+  prop_hours = plane.prop.spoh
+  months_since_annual = 0
+  hours_since_inspection = 0
+
+  per_year_hours = 1.0 * flight_hours / ownership_years
+  per_month_hours = 1.0 * flight_hours / ownership_months
+  per_month_hobby = int(usage.personal_rate * per_month_hours)
+  per_month_commercial = int(per_month_hours) - per_month_hobby
+
+  print('Per month hobby: %s' % per_month_hobby)
+  print('Per month commercial: %s' % per_month_hobby)
+
+  for month in range(ownership_months):
     principal, interest = next(acquisition_iterator)
-    costs += interest
-    balance -= principal
-    fixed_costs = next(fixed_iterator)
-    costs += fixed_costs
-    depreciations.tick()
+    balance += CapEx(principal)
+    balance += OpEx(interest)
 
-    if debug:
-      print('Month %3d:' % k)
-      print('  Fixed: %s' % fixed_costs)
-      print('  Balance: %s' % balance)
-      print('  Costs: %s' % costs)
-      print('  P/I: %s / %s' % (principal, interest))
+    if month % 12 == 0:
+      balance += OpEx(yearly_costs)
+      for depreciation in depreciations[month / 12]:
+        balance += Depreciation(depreciation)
 
-  for _ in range(flight_hours):
-    costs += next(hourly_iterator)
+    engine_hours += per_month_hobby
+    prop_hours += per_month_hobby
+    balance += Hobby(hourly_costs * per_month_hobby)
 
-  revenue = flight_hours * (1 - usage.personal_rate) * usage.revenue * usage.hobbs_ratio
+    engine_hours += per_month_commercial
+    prop_hours += per_month_commercial
+    balance += OpEx(hourly_costs * per_month_commercial)
+    balance += Income(usage.revenue * per_month_commercial * usage.hobbs_ratio)
+    balance += OpEx(usage.salary * per_month_commercial * usage.hobbs_ratio)
 
-  if debug:
-    print('Revenue generated: %s' % revenue)
+    # Because the useful life of an engine is > 1 year we must
+    # categorize the overhaul as a capital expenditure and
+    # depreciate accordingly.
+    if engine_hours > plane.engine.tbo:
+      engine_hours -= plane.engine.tbo
+      balance += Asset(
+          plane.engine.overhaul,
+          0,
+          int(math.ceil(plane.engine.tbo / per_month_hours)))
+      balance += CapEx(plane.engine.overhaul)
+      ownership_years = int(math.ceil(plane.engine.tbo / per_year_hours))
+      for year in range(ownership_years):
+        depreciations[month / 12 + year].append(1.0 * plane.engine.overhaul / ownership_years)
 
-  price_at_sale = depreciations.price()
+    # Same for prop
+    if prop_hours > plane.prop.tbo:
+      prop_hours -= plane.prop.tbo
+      balance += Asset(
+          plane.prop.overhaul,
+          0,
+          int(math.ceil(plane.prop.tbo / per_month_hours)))
+      balance += CapEx(plane.prop.overhaul)
+      ownership_years = int(math.ceil(plane.prop.tbo / per_year_hours))
+      for year in range(ownership_years):
+        depreciations[month / 12 + year].append(1.0 * plane.prop.overhaul / ownership_years)
 
-  if debug:
-    print('Plane price: %s' % plane.price)
-    print('Balance left on plane: %s' % balance)
-    print('Price at sale: %s' % price_at_sale)
-    print('Gas, tax, overhauls, interest: %s' % costs)
+    months_since_annual += 1
+    hours_since_inspection += per_month_hours
+    if months_since_annual >= 12 or hours_since_inspection >= 100:
+      months_since_annual = 0
+      hours_since_inspection = 0
+      balance += OpEx(plane.annual)
 
-  # return the total amount spent
-  spent = plane.price + sum(upgrade.price for upgrade in plane.upgrades)
-  if sell:
-    spent -= price_at_sale
-  spent -= revenue
-  spent += costs
+    balance.tick()
 
-  if debug:
-    print('Total spent: %s' % spent)
-
-  return spent
+  return balance

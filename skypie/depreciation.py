@@ -1,9 +1,9 @@
 import math
 
-from .common import Depreciation
+from .common import DepreciationModel
 
 
-class FixedDepreciation(Depreciation):
+class FixedDepreciation(DepreciationModel):
   def __init__(self, percent):
     self.percent = percent
 
@@ -15,7 +15,7 @@ class FixedDepreciation(Depreciation):
     return 'Fixed depreciation of %.2f%%' % (self.percent * 100)
 
 
-class ExponentialDepreciation(Depreciation):
+class ExponentialDepreciation(DepreciationModel):
   def __init__(self, amount, rate):
     # amount = percentage, e.g. 0.07 for 7%
     # rate = over how many months
@@ -35,7 +35,7 @@ class ExponentialDepreciation(Depreciation):
     return '%.2f%% per %d months' % (self.amount * 100, self.rate)
 
 
-class LinearDepreciation(Depreciation):
+class LinearDepreciation(DepreciationModel):
   def __init__(self, months):
     self.months = months
 
@@ -49,7 +49,7 @@ class LinearDepreciation(Depreciation):
     return 'Fixed %d month useful life.' % self.months
 
 
-class DepreciationCombinator(Depreciation):
+class DepreciationCombinator(DepreciationModel):
   def __init__(self, depreciation_models):
     self.dms = [model for model in depreciation_models]
 
